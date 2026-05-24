@@ -100,7 +100,6 @@ buttonsContainer.Parent = bgContainer
 buttonsContainer.ClipsDescendants = true
 buttonsContainer.ZIndex = 110
 
--- Ensure buttonsContainer is perfectly square
 local aspectRatio = Instance.new("UIAspectRatioConstraint")
 aspectRatio.Parent = buttonsContainer
 aspectRatio.AspectRatio = 1
@@ -151,13 +150,13 @@ local function updateButtons()
     local angleStep = (2 * math.pi) / maxVisibleButtons
     local center = Vector2.new(wheelRadius, wheelRadius)
     local invisLineY = wheelRadius
-    local buttonRadius = wheelRadius - 80 -- smaller radius to bring buttons closer to center
+    local buttonRadius = wheelRadius - 80
 
     for i, btn in ipairs(buttons) do
         local emoteIndex = ((startIndex + i - 2) % #emotes) + 1
         local emote = emotes[emoteIndex]
 
-        local angle = angleStep * (i - 1) + angleOffset - math.pi/2 -- start from top (12 o'clock)
+        local angle = angleStep * (i - 1) + angleOffset - math.pi / 2
 
         local x = center.X + buttonRadius * math.cos(angle)
         local y = center.Y + buttonRadius * math.sin(angle)
@@ -205,7 +204,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 
         if wheelVisible then
             if input.KeyCode == Enum.KeyCode.Left then
-                angleOffset = angleOffset + 0.3 -- faster scroll
+                angleOffset = angleOffset + 0.4 -- faster scroll speed
                 updateButtons()
             end
         end
@@ -227,7 +226,7 @@ end)
 UserInputService.InputChanged:Connect(function(input, gameProcessed)
     if wheelVisible and input.UserInputType == Enum.UserInputType.MouseWheel then
         if input.Position.Z < 0 then
-            angleOffset = angleOffset + 0.15 -- faster scroll
+            angleOffset = angleOffset + 0.2 -- faster scroll speed
             updateButtons()
         end
     end
