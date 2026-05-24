@@ -18,11 +18,11 @@ local emotes = {
 local wheelVisible = false
 local emotePlaying = false
 
--- Colors from your request
+-- Colors
 local backgroundColor = Color3.fromRGB(130, 102, 57)
 local buttonColor = Color3.fromRGB(194, 153, 89)
-local white = Color3.new(1, 1, 1)
 local black = Color3.new(0, 0, 0)
+local white = Color3.new(1, 1, 1)
 
 local wheelRadius = 250
 local holeRadius = 90
@@ -44,32 +44,46 @@ bgContainer.BackgroundTransparency = 1
 bgContainer.Parent = screenGui
 bgContainer.Visible = false
 
+-- Outer black outline circle
 local outerCircle = Instance.new("Frame")
 outerCircle.Name = "OuterCircle"
 outerCircle.AnchorPoint = Vector2.new(0.5, 0.5)
-outerCircle.Size = UDim2.new(0, wheelRadius * 2, 0, wheelRadius * 2)
+outerCircle.Size = UDim2.new(0, wheelRadius * 2 + 6, 0, wheelRadius * 2 + 6) -- slightly bigger for outline
 outerCircle.Position = UDim2.new(0.5, 0, 0.5, 0)
-outerCircle.BackgroundColor3 = backgroundColor
-outerCircle.BorderColor3 = white
-outerCircle.BorderSizePixel = 3
+outerCircle.BackgroundColor3 = black
+outerCircle.BorderSizePixel = 0
 outerCircle.Parent = bgContainer
-outerCircle.ClipsDescendants = true
 local outerUICorner = Instance.new("UICorner")
 outerUICorner.CornerRadius = UDim.new(1, 0)
 outerUICorner.Parent = outerCircle
 
+-- Inner beige circle (background)
+local innerCircle = Instance.new("Frame")
+innerCircle.Name = "InnerCircle"
+innerCircle.AnchorPoint = Vector2.new(0.5, 0.5)
+innerCircle.Size = UDim2.new(0, wheelRadius * 2, 0, wheelRadius * 2)
+innerCircle.Position = UDim2.new(0.5, 0, 0.5, 0)
+innerCircle.BackgroundColor3 = backgroundColor
+innerCircle.BorderSizePixel = 0
+innerCircle.Parent = outerCircle
+local innerUICorner = Instance.new("UICorner")
+innerUICorner.CornerRadius = UDim.new(1, 0)
+innerUICorner.Parent = innerCircle
+
+-- Center hole circle (transparent)
 local holeCircle = Instance.new("Frame")
 holeCircle.Name = "HoleCircle"
 holeCircle.AnchorPoint = Vector2.new(0.5, 0.5)
 holeCircle.Size = UDim2.new(0, holeRadius * 2, 0, holeRadius * 2)
 holeCircle.Position = UDim2.new(0.5, 0, 0.5, 0)
-holeCircle.BackgroundTransparency = 1 -- fully transparent to simulate hole
+holeCircle.BackgroundTransparency = 1 -- fully transparent hole
 holeCircle.BorderSizePixel = 0
-holeCircle.Parent = outerCircle
+holeCircle.Parent = innerCircle
 local holeUICorner = Instance.new("UICorner")
 holeUICorner.CornerRadius = UDim.new(1, 0)
 holeUICorner.Parent = holeCircle
 
+-- Horizontal line (visible)
 local invisLine = Instance.new("Frame")
 invisLine.Name = "InvisibilityLine"
 invisLine.AnchorPoint = Vector2.new(0.5, 0.5)
