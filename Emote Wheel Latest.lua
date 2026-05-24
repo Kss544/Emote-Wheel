@@ -1,5 +1,4 @@
 local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
 local ContextActionService = game:GetService("ContextActionService")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
@@ -44,11 +43,10 @@ bgContainer.BackgroundTransparency = 1
 bgContainer.Parent = screenGui
 bgContainer.Visible = false
 
--- Outer black outline circle
 local outerCircle = Instance.new("Frame")
 outerCircle.Name = "OuterCircle"
 outerCircle.AnchorPoint = Vector2.new(0.5, 0.5)
-outerCircle.Size = UDim2.new(0, wheelRadius * 2 + 6, 0, wheelRadius * 2 + 6) -- slightly bigger for outline
+outerCircle.Size = UDim2.new(0, wheelRadius * 2 + 6, 0, wheelRadius * 2 + 6)
 outerCircle.Position = UDim2.new(0.5, 0, 0.5, 0)
 outerCircle.BackgroundColor3 = black
 outerCircle.BorderSizePixel = 0
@@ -57,7 +55,6 @@ local outerUICorner = Instance.new("UICorner")
 outerUICorner.CornerRadius = UDim.new(1, 0)
 outerUICorner.Parent = outerCircle
 
--- Inner beige circle (background)
 local innerCircle = Instance.new("Frame")
 innerCircle.Name = "InnerCircle"
 innerCircle.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -70,20 +67,18 @@ local innerUICorner = Instance.new("UICorner")
 innerUICorner.CornerRadius = UDim.new(1, 0)
 innerUICorner.Parent = innerCircle
 
--- Center hole circle (transparent)
 local holeCircle = Instance.new("Frame")
 holeCircle.Name = "HoleCircle"
 holeCircle.AnchorPoint = Vector2.new(0.5, 0.5)
 holeCircle.Size = UDim2.new(0, holeRadius * 2, 0, holeRadius * 2)
 holeCircle.Position = UDim2.new(0.5, 0, 0.5, 0)
-holeCircle.BackgroundTransparency = 1 -- fully transparent hole
+holeCircle.BackgroundTransparency = 1
 holeCircle.BorderSizePixel = 0
 holeCircle.Parent = innerCircle
 local holeUICorner = Instance.new("UICorner")
 holeUICorner.CornerRadius = UDim.new(1, 0)
 holeUICorner.Parent = holeCircle
 
--- Horizontal line (visible)
 local invisLine = Instance.new("Frame")
 invisLine.Name = "InvisibilityLine"
 invisLine.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -105,6 +100,11 @@ buttonsContainer.Parent = bgContainer
 buttonsContainer.ClipsDescendants = true
 buttonsContainer.ZIndex = 110
 
+-- Ensure buttonsContainer is perfectly square
+local aspectRatio = Instance.new("UIAspectRatioConstraint")
+aspectRatio.Parent = buttonsContainer
+aspectRatio.AspectRatio = 1
+
 local function roundCorners(guiObject, radius)
     local uicorner = Instance.new("UICorner")
     uicorner.CornerRadius = UDim.new(0, radius)
@@ -116,7 +116,7 @@ local buttons = {}
 for i = 1, maxVisibleButtons do
     local btn = Instance.new("TextButton")
     btn.Name = "EmoteButton" .. i
-    btn.Size = UDim2.new(0, buttonSize, 0, buttonSize)
+    btn.Size = UDim2.fromOffset(buttonSize, buttonSize)
     btn.AnchorPoint = Vector2.new(0.5, 0.5)
     btn.BackgroundColor3 = buttonColor
     btn.BorderColor3 = black
@@ -157,22 +157,17 @@ local function updateButtons()
         local emoteIndex = ((startIndex + i - 2) % #emotes) + 1
         local emote = emotes[emoteIndex]
 
-        local angle = angleStep * (i - 1) + angleOffset
+        local angle = angleStep * (i - 1) + angleOffset - math.pi/2 -- start from top (12 o'clock)
 
         local x = center.X + buttonRadius * math.cos(angle)
         local y = center.Y + buttonRadius * math.sin(angle)
-        btn.Position = UDim2.new(0, x, 0, y)
+        btn.Position = UDim2.fromOffset(x, y)
 
         btn.Text = emote.Name
         btn.Command = emote.Command
 
         local distanceToLine = y - invisLineY
-        -- Hide button if it crosses or is below the horizontal line (only scroll anticlockwise)
-        if distanceToLine > -buttonSize / 2 then
-            btn.Visible = false
-        else
-            btn.Visible = true
-        end
+        btn.Visible = distanceToLine < -buttonSize / 2
     end
 end
 
@@ -188,7 +183,6 @@ end
 
 local keysPressed = {}
 
--- Block camera zoom while wheel is open
 local function blockCameraZoom(actionName, inputState, inputObject)
     if wheelVisible then
         return Enum.ContextActionResult.Sink
@@ -210,9 +204,8 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         end
 
         if wheelVisible then
-            -- Only allow anticlockwise scroll (increment angle)
             if input.KeyCode == Enum.KeyCode.Left then
-                angleOffset = angleOffset + 0.1
+                angleOffset = angleOffset + 0.3 -- faster scroll
                 updateButtons()
             end
         end
@@ -233,9 +226,8 @@ end)
 
 UserInputService.InputChanged:Connect(function(input, gameProcessed)
     if wheelVisible and input.UserInputType == Enum.UserInputType.MouseWheel then
-        -- Only allow anticlockwise scroll (mouse wheel up = negative Z)
         if input.Position.Z < 0 then
-            angleOffset = angleOffset + 0.05
+            angleOffset = angleOffset + 0.15 -- faster scroll
             updateButtons()
         end
     end
