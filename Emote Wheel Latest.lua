@@ -6,14 +6,12 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 -- Emotes list (example)
 local emotes = {
-    {Name = "Wave", Command = [[execCmd("animation 85446816148276")]]},
-    {Name = "Fly", Command = [[execCmd("fly")]]},
-    {Name = "Dance", Command = [[execCmd("animation 1234567890")]]},
-    {Name = "Laugh", Command = [[execCmd("animation 11223344")]]},
-    {Name = "Sit", Command = [[execCmd("animation 56789012")]]},
-    {Name = "Cheer", Command = [[execCmd("animation 34567890")]]},
-    {Name = "Point", Command = [[execCmd("animation 98765432")]]},
-    {Name = "Clap", Command = [[execCmd("animation 19283746")]]},
+    {Name = "Invincible Wobble", Command = [[execCmd("animation 85446816148276")]]},
+    {Name = "Body Phone", Command = [[execCmd("animation 95714033584938")]]},
+    {Name = "Bibicaly Angle", Command = [[execCmd("animation 118314972618293")]]},
+    {Name = "Spider man gang", Command = [[execCmd("animation 108635834286627")]]},
+    {Name = "Basketball head", Command = [[execCmd("animation 128861093061630")]]},
+    {Name = "godly aura fly idle", Command = [[execCmd("animation 76361248833307")]]},
     -- Add more emotes here for testing infinite scroll
 }
 
