@@ -1,5 +1,6 @@
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local ContextActionService = game:GetService("ContextActionService")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -18,7 +19,6 @@ local emotes = {
 local wheelVisible = false
 local emotePlaying = false
 
--- Colors
 local backgroundColor = Color3.fromRGB(130, 102, 57)
 local buttonColor = Color3.fromRGB(194, 153, 89)
 local black = Color3.new(0, 0, 0)
@@ -44,11 +44,10 @@ bgContainer.BackgroundTransparency = 1
 bgContainer.Parent = screenGui
 bgContainer.Visible = false
 
--- Outer black outline circle
 local outerCircle = Instance.new("Frame")
 outerCircle.Name = "OuterCircle"
 outerCircle.AnchorPoint = Vector2.new(0.5, 0.5)
-outerCircle.Size = UDim2.new(0, wheelRadius * 2 + 6, 0, wheelRadius * 2 + 6) -- slightly bigger for outline
+outerCircle.Size = UDim2.new(0, wheelRadius * 2 + 6, 0, wheelRadius * 2 + 6)
 outerCircle.Position = UDim2.new(0.5, 0, 0.5, 0)
 outerCircle.BackgroundColor3 = black
 outerCircle.BorderSizePixel = 0
@@ -57,7 +56,6 @@ local outerUICorner = Instance.new("UICorner")
 outerUICorner.CornerRadius = UDim.new(1, 0)
 outerUICorner.Parent = outerCircle
 
--- Inner beige circle (background)
 local innerCircle = Instance.new("Frame")
 innerCircle.Name = "InnerCircle"
 innerCircle.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -70,20 +68,18 @@ local innerUICorner = Instance.new("UICorner")
 innerUICorner.CornerRadius = UDim.new(1, 0)
 innerUICorner.Parent = innerCircle
 
--- Center hole circle (transparent)
 local holeCircle = Instance.new("Frame")
 holeCircle.Name = "HoleCircle"
 holeCircle.AnchorPoint = Vector2.new(0.5, 0.5)
 holeCircle.Size = UDim2.new(0, holeRadius * 2, 0, holeRadius * 2)
 holeCircle.Position = UDim2.new(0.5, 0, 0.5, 0)
-holeCircle.BackgroundTransparency = 1 -- fully transparent hole
+holeCircle.BackgroundTransparency = 1
 holeCircle.BorderSizePixel = 0
 holeCircle.Parent = innerCircle
 local holeUICorner = Instance.new("UICorner")
 holeUICorner.CornerRadius = UDim.new(1, 0)
 holeUICorner.Parent = holeCircle
 
--- Horizontal line (visible)
 local invisLine = Instance.new("Frame")
 invisLine.Name = "InvisibilityLine"
 invisLine.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -165,8 +161,13 @@ local function updateButtons()
         btn.Text = emote.Name
         btn.Command = emote.Command
 
-        local distanceToLine = math.abs(y - invisLineY)
-        btn.Visible = distanceToLine >= (buttonSize / 2)
+        local distanceToLine = y - invisLineY
+        -- Ocultar botón si cruza la línea horizontal (solo scroll antihorario)
+        if distanceToLine > -buttonSize / 2 then
+            btn.Visible = false
+        else
+            btn.Visible = true
+        end
     end
 end
 
@@ -182,6 +183,17 @@ end
 
 local keysPressed = {}
 
+-- Bloquear zoom de cámara mientras la rueda está abierta
+local function blockCameraZoom(actionName, inputState, inputObject)
+    if wheelVisible then
+        return Enum.ContextActionResult.Sink
+    else
+        return Enum.ContextActionResult.Pass
+    end
+end
+
+ContextActionService:BindAction("BlockCameraZoom", blockCameraZoom, false, Enum.UserInputType.MouseWheel)
+
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.UserInputType == Enum.UserInputType.Keyboard then
@@ -193,11 +205,9 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         end
 
         if wheelVisible then
+            -- Solo scroll antihorario (incrementar ángulo)
             if input.KeyCode == Enum.KeyCode.Left then
                 angleOffset = angleOffset + 0.1
-                updateButtons()
-            elseif input.KeyCode == Enum.KeyCode.Right then
-                angleOffset = angleOffset - 0.1
                 updateButtons()
             end
         end
@@ -218,8 +228,11 @@ end)
 
 UserInputService.InputChanged:Connect(function(input, gameProcessed)
     if wheelVisible and input.UserInputType == Enum.UserInputType.MouseWheel then
-        angleOffset = angleOffset - input.Position.Z * 0.05
-        updateButtons()
+        -- Solo scroll antihorario (solo decremento negativo)
+        if input.Position.Z < 0 then
+            angleOffset = angleOffset + 0.05
+            updateButtons()
+        end
     end
 end)
 
