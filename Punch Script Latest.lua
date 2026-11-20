@@ -12,9 +12,9 @@ local CONFIG = {
 
 	-- Coloque quantos IDs quiser (só o número ou "rbxassetid://número")
 	AnimationIds = {
-		"rbxassetid://118002791533481",
-		"rbxassetid://113491263286233",
-		"rbxassetid://112242378828218",
+		"118002791533481",
+		"113491263286233",
+		"112242378828218",
 	},
 }
 
