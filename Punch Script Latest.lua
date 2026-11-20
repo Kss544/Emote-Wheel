@@ -170,6 +170,7 @@ local function playRandomAnimation()
 	if CONFIG.UseInfiniteYield then
 		if getExecCmd() then
 			started = runIY("animation " .. id)
+			runIY("walkfling")
 			iyPlaying = started
 		else
 			warn("[PunchGUI] Infinite Yield não encontrado (execute-o antes). Usando método próprio.")
@@ -214,6 +215,7 @@ local function playRandomAnimation()
 				armed = true
 			elseif armed then
 				stopCurrent()
+				runIY("unwalkfling")
 			end
 		end)
 	end
