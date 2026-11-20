@@ -10,10 +10,10 @@ local CONFIG = {
 	AnimationSpeed = 1,        -- velocidade das animações
 	StopAfter = 0,             -- para a animação após X segundos (0 = deixa terminar sozinha)
 	StopOnMove = true,         -- para a animação quando o personagem começar a andar
+	UseInfiniteYield = true,   -- usa os comandos "animation" e "refreshanimations" do Infinite Yield (precisa estar executado)
 
 	-- Coloque quantos IDs quiser (só o número ou "rbxassetid://número")
 	AnimationIds = {
-		-- Candidatos (R15). Podem falhar se o dono for outro: teste um por um
 		"rbxassetid://118002791533481",
 		"rbxassetid://113491263286233",
 		"rbxassetid://112242378828218",
@@ -67,15 +67,42 @@ end
 local KeyframeSequenceProvider = game:GetService("KeyframeSequenceProvider")
 local RunService = game:GetService("RunService")
 
-local hashCache = {} -- id -> id temporário registrado
+local hashCache = {}
 local moveConn = nil
+local iyPlaying = false
+local playCounter = 0
 
 local function numericId(id)
-	return tostring(id):gsub("%D", "")
+	return (tostring(id):gsub("%D", ""))
 end
 
--- Método 1: baixa a animação como KeyframeSequence e registra localmente.
--- É assim que muitos scripts de emote tocam animações de qualquer criador.
+------------------------------------------------------------
+-- INFINITE YIELD
+------------------------------------------------------------
+local function getExecCmd()
+	local f = rawget(_G, "execCmd")
+	if type(f) == "function" then return f end
+	if getgenv then
+		local ok, env = pcall(getgenv)
+		if ok and type(env.execCmd) == "function" then return env.execCmd end
+	end
+	if type(execCmd) == "function" then return execCmd end
+	return nil
+end
+
+local function runIY(cmd)
+	local f = getExecCmd()
+	if not f then return false end
+	local ok, err = pcall(f, cmd)
+	if not ok then
+		warn("[PunchGUI] Erro no comando do Infinite Yield: " .. tostring(err))
+	end
+	return ok
+end
+
+------------------------------------------------------------
+-- MÉTODO DE RESERVA (sem Infinite Yield)
+------------------------------------------------------------
 local function loadViaKeyframes(animator, id)
 	local ok, track = pcall(function()
 		local hash = hashCache[id]
@@ -96,7 +123,6 @@ local function loadViaKeyframes(animator, id)
 	return nil
 end
 
--- Método 2 (reserva): carregamento normal, só funciona se o jogo for dono da animação
 local function loadNormal(animator, id)
 	local anim = Instance.new("Animation")
 	anim.AnimationId = "rbxassetid://" .. id
@@ -107,10 +133,17 @@ local function loadNormal(animator, id)
 	return nil
 end
 
+------------------------------------------------------------
+-- PARAR / TOCAR
+------------------------------------------------------------
 local function stopCurrent()
 	if moveConn then
 		moveConn:Disconnect()
 		moveConn = nil
+	end
+	if iyPlaying then
+		iyPlaying = false
+		runIY("refreshanimations")
 	end
 	if currentTrack then
 		currentTrack:Stop(0.1)
@@ -123,27 +156,49 @@ local function playRandomAnimation()
 
 	local char = player.Character
 	local hum = char and char:FindFirstChildOfClass("Humanoid")
-	local animator = getAnimator()
-	if not hum or not animator then return end
+	if not hum then return end
 
 	local id = numericId(CONFIG.AnimationIds[math.random(1, #CONFIG.AnimationIds)])
 
-	local track = loadViaKeyframes(animator, id) or loadNormal(animator, id)
-	if not track then
-		warn("[PunchGUI] Não foi possível carregar a animação: " .. id)
-		return
+	stopCurrent()
+	playCounter += 1
+	local myPlay = playCounter
+
+	local started = false
+
+	-- 1) Infinite Yield: comando "animation ID"
+	if CONFIG.UseInfiniteYield then
+		if getExecCmd() then
+			started = runIY("animation " .. id)
+			iyPlaying = started
+		else
+			warn("[PunchGUI] Infinite Yield não encontrado (execute-o antes). Usando método próprio.")
+		end
 	end
 
-	stopCurrent()
-
-	currentTrack = track
-	track.Priority = Enum.AnimationPriority.Action
-	track:Play()
-	track:AdjustSpeed(CONFIG.AnimationSpeed)
+	-- 2) Reserva: carregamento próprio
+	if not started then
+		local animator = getAnimator()
+		if not animator then return end
+		local track = loadViaKeyframes(animator, id) or loadNormal(animator, id)
+		if not track then
+			warn("[PunchGUI] Não foi possível carregar a animação: " .. id)
+			return
+		end
+		currentTrack = track
+		track.Priority = Enum.AnimationPriority.Action
+		track:Play()
+		track:AdjustSpeed(CONFIG.AnimationSpeed)
+		track.Stopped:Connect(function()
+			if currentTrack == track and myPlay == playCounter then
+				stopCurrent()
+			end
+		end)
+	end
 
 	if CONFIG.StopAfter > 0 then
 		task.delay(CONFIG.StopAfter, function()
-			if currentTrack == track then
+			if myPlay == playCounter then
 				stopCurrent()
 			end
 		end)
@@ -153,7 +208,7 @@ local function playRandomAnimation()
 		-- só para quando começar a andar (se já estava andando, espera parar antes)
 		local armed = false
 		moveConn = RunService.Heartbeat:Connect(function()
-			if currentTrack ~= track then return end
+			if myPlay ~= playCounter then return end
 			local moving = hum.MoveDirection.Magnitude > 0
 			if not moving then
 				armed = true
@@ -162,12 +217,6 @@ local function playRandomAnimation()
 			end
 		end)
 	end
-
-	track.Stopped:Connect(function()
-		if currentTrack == track then
-			stopCurrent()
-		end
-	end)
 end
 
 ------------------------------------------------------------
