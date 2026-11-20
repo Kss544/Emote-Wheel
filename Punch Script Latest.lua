@@ -9,15 +9,14 @@ local CONFIG = {
 	Cooldown = 0.3,            -- tempo mínimo entre socos (segundos)
 	AnimationSpeed = 1,        -- velocidade das animações
 	StopAfter = 0,             -- para a animação após X segundos (0 = deixa terminar sozinha)
+	StopOnMove = true,         -- para a animação quando o personagem começar a andar
 
 	-- Coloque quantos IDs quiser (só o número ou "rbxassetid://número")
 	AnimationIds = {
 		-- Candidatos (R15). Podem falhar se o dono for outro: teste um por um
-		"rbxassetid://18576726303",
-		"rbxassetid://18576729183",
-		"rbxassetid://18576731629",
-		-- Animação oficial da Roblox (emote de dança R15), serve de teste, sempre carrega
-		"rbxassetid://507771019",
+		"rbxassetid://118002791533481",
+		"rbxassetid://113491263286233",
+		"rbxassetid://112242378828218",
 	},
 }
 
@@ -56,7 +55,6 @@ end
 local punchKey = findKey(CONFIG.DefaultKey) or Enum.KeyCode.Q
 local lastPunch = 0
 local currentTrack = nil
-local loadedCache = {}
 
 local function getAnimator()
 	local char = player.Character
@@ -66,28 +64,77 @@ local function getAnimator()
 	return hum:FindFirstChildOfClass("Animator") or hum
 end
 
-local function playRandomAnimation()
-	if #CONFIG.AnimationIds == 0 then return end
+local KeyframeSequenceProvider = game:GetService("KeyframeSequenceProvider")
+local RunService = game:GetService("RunService")
 
-	local animator = getAnimator()
-	if not animator then return end
+local hashCache = {} -- id -> id temporário registrado
+local moveConn = nil
 
-	local id = normalizeId(CONFIG.AnimationIds[math.random(1, #CONFIG.AnimationIds)])
+local function numericId(id)
+	return tostring(id):gsub("%D", "")
+end
 
+-- Método 1: baixa a animação como KeyframeSequence e registra localmente.
+-- É assim que muitos scripts de emote tocam animações de qualquer criador.
+local function loadViaKeyframes(animator, id)
+	local ok, track = pcall(function()
+		local hash = hashCache[id]
+		if not hash then
+			local objs = game:GetObjects("rbxassetid://" .. id)
+			local ks = objs and objs[1]
+			if not ks or not ks:IsA("KeyframeSequence") then
+				error("não é KeyframeSequence")
+			end
+			hash = KeyframeSequenceProvider:RegisterKeyframeSequence(ks)
+			hashCache[id] = hash
+		end
+		local anim = Instance.new("Animation")
+		anim.AnimationId = hash
+		return animator:LoadAnimation(anim)
+	end)
+	if ok then return track end
+	return nil
+end
+
+-- Método 2 (reserva): carregamento normal, só funciona se o jogo for dono da animação
+local function loadNormal(animator, id)
 	local anim = Instance.new("Animation")
-	anim.AnimationId = id
-
+	anim.AnimationId = "rbxassetid://" .. id
 	local ok, track = pcall(function()
 		return animator:LoadAnimation(anim)
 	end)
-	if not ok or not track then
+	if ok then return track end
+	return nil
+end
+
+local function stopCurrent()
+	if moveConn then
+		moveConn:Disconnect()
+		moveConn = nil
+	end
+	if currentTrack then
+		currentTrack:Stop(0.1)
+		currentTrack = nil
+	end
+end
+
+local function playRandomAnimation()
+	if #CONFIG.AnimationIds == 0 then return end
+
+	local char = player.Character
+	local hum = char and char:FindFirstChildOfClass("Humanoid")
+	local animator = getAnimator()
+	if not hum or not animator then return end
+
+	local id = numericId(CONFIG.AnimationIds[math.random(1, #CONFIG.AnimationIds)])
+
+	local track = loadViaKeyframes(animator, id) or loadNormal(animator, id)
+	if not track then
 		warn("[PunchGUI] Não foi possível carregar a animação: " .. id)
 		return
 	end
 
-	if currentTrack then
-		currentTrack:Stop(0.1)
-	end
+	stopCurrent()
 
 	currentTrack = track
 	track.Priority = Enum.AnimationPriority.Action
@@ -97,10 +144,30 @@ local function playRandomAnimation()
 	if CONFIG.StopAfter > 0 then
 		task.delay(CONFIG.StopAfter, function()
 			if currentTrack == track then
-				track:Stop(0.1)
+				stopCurrent()
 			end
 		end)
 	end
+
+	if CONFIG.StopOnMove then
+		-- só para quando começar a andar (se já estava andando, espera parar antes)
+		local armed = false
+		moveConn = RunService.Heartbeat:Connect(function()
+			if currentTrack ~= track then return end
+			local moving = hum.MoveDirection.Magnitude > 0
+			if not moving then
+				armed = true
+			elseif armed then
+				stopCurrent()
+			end
+		end)
+	end
+
+	track.Stopped:Connect(function()
+		if currentTrack == track then
+			stopCurrent()
+		end
+	end)
 end
 
 ------------------------------------------------------------
