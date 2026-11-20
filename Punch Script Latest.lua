@@ -12,9 +12,12 @@ local CONFIG = {
 
 	-- Coloque quantos IDs quiser (só o número ou "rbxassetid://número")
 	AnimationIds = {
-		"118002791533481",
-		"113491263286233",
-		"112242378828218",
+		-- Candidatos (R15). Podem falhar se o dono for outro: teste um por um
+		"rbxassetid://18576726303",
+		"rbxassetid://18576729183",
+		"rbxassetid://18576731629",
+		-- Animação oficial da Roblox (emote de dança R15), serve de teste, sempre carrega
+		"rbxassetid://507771019",
 	},
 }
 
@@ -38,7 +41,19 @@ local function normalizeId(id)
 	return "rbxassetid://" .. id:gsub("%D", "")
 end
 
-local punchKey = Enum.KeyCode[CONFIG.DefaultKey:upper()] or Enum.KeyCode.Q
+local function findKey(name)
+	local ok, key = pcall(function()
+		return Enum.KeyCode[name]
+	end)
+	if ok then return key end
+	ok, key = pcall(function()
+		return Enum.KeyCode[name:upper()]
+	end)
+	if ok then return key end
+	return nil
+end
+
+local punchKey = findKey(CONFIG.DefaultKey) or Enum.KeyCode.Q
 local lastPunch = 0
 local currentTrack = nil
 local loadedCache = {}
@@ -295,7 +310,7 @@ end)
 ------------------------------------------------------------
 keyBox.FocusLost:Connect(function()
 	local text = keyBox.Text:gsub("%s", "")
-	local newKey = Enum.KeyCode[text:upper()] or Enum.KeyCode[text]
+	local newKey = findKey(text)
 	if newKey then
 		punchKey = newKey
 		keyBox.Text = newKey.Name
