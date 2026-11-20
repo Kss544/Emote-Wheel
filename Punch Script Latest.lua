@@ -17,6 +17,15 @@ local CONFIG = {
 		"rbxassetid://118002791533481",
 		"rbxassetid://113491263286233",
 		"rbxassetid://112242378828218",
+		"rbxassetid://129800542165697",
+		"rbxassetid://112393666903351",
+		"rbxassetid://87549548264695",
+		"rbxassetid://129850328316768",
+		"rbxassetid://86397067984211",
+		"rbxassetid://127192517089060",
+		"rbxassetid://125561865530499",
+		"rbxassetid://73477133051741",
+		"rbxassetid://89841090338611",
 	},
 }
 
