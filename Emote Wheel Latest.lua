@@ -5,12 +5,12 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 -- Emotes list: each with a name and a full command string to execute
 local emotes = {
-    {Name = "Invincible Wobble", Command = [[execCmd("animation 85446816148276")]]},
-    {Name = "Body Phone", Command = [[execCmd("animation 95714033584938")]]},
-    {Name = "Bibicaly Angle", Command = [[execCmd("animation 118314972618293")]]},
-    {Name = "Spider man gang", Command = [[execCmd("animation 108635834286627")]]},
-    {Name = "Basketball head", Command = [[execCmd("animation 128861093061630")]]},
-    {Name = "godly aura fly idle", Command = [[execCmd("animation 76361248833307")]]},
+    {Name = "Invincible Wobble", Command = [[execCmd("emote 85446816148276")]]},
+    {Name = "Body Phone", Command = [[execCmd("emote 95714033584938")]]},
+    {Name = "Bibicaly Angle", Command = [[execCmd("emote 118314972618293")]]},
+    {Name = "Spider man gang", Command = [[execCmd("emote 108635834286627")]]},
+    {Name = "Basketball head", Command = [[execCmd("emote 128861093061630")]]},
+    {Name = "godly aura fly idle", Command = [[execCmd("emote 76361248833307")]]},
     -- Add more emotes here with full commands
 }
 
