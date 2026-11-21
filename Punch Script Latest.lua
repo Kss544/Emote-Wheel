@@ -178,7 +178,7 @@ local function playRandomAnimation()
 	-- 1) Infinite Yield: comando "animation ID"
 	if CONFIG.UseInfiniteYield then
 		if getExecCmd() then
-			started = runIY("animation " .. id)
+			started = runIY("emote " .. id)
 			runIY("walkfling")
 			iyPlaying = started
 		else
